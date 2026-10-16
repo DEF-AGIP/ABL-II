@@ -589,9 +589,6 @@
             </div>
             <div class="header-actions">
                 <span id="dataSourceBadge" class="status-badge">📊 Datos: Base Oficial 2026 (Cuotas 1 a 11)</span>
-                <button class="btn btn-outline-light" onclick="exportCurrentTableCSV()" title="Descargar tabla filtrada actual en CSV">
-                    ⬇️ Exportar Vista (CSV)
-                </button>
             </div>
         </div>
     </header>
@@ -1311,7 +1308,7 @@
             document.getElementById('th_name').textContent =
                 state.geoLevel === 'comuna' ? 'Comuna ↕' : 'Barrio (Comuna) ↕';
             document.getElementById('tablePanelTitle').textContent =
-                state.geoLevel === 'comuna' ? 'Detalle por Comuna (15 + Sin asignar)' : 'Detalle por Barrio (48 + Sin asignar)';
+                state.geoLevel === 'comuna' ? 'Detalle por Comuna (15)' : 'Detalle por Barrio (48)';
 
             let list = Object.values(mapAgg).filter(item => {
                 if (!search) return true;
@@ -1541,60 +1538,6 @@
             renderTable();
             document.getElementById('dataSourceBadge').textContent = `📊 Datos: ${sourceLabel} (${parsed.length} filas)`;
             return true;
-        }
-
-        function exportCurrentTableCSV() {
-            const { mapAgg } = getAggregatedData();
-            const headers = [
-                state.geoLevel === 'comuna' ? 'Comuna' : 'Barrio',
-                'Comuna_ID',
-                'Morosidad_Importe_Pct',
-                'Morosidad_Cantidad_Pct',
-                'Cumplimiento_Importe_Pct',
-                'Cumplimiento_Cantidad_Pct',
-                'Partidas_Emision',
-                'Importe_Emision_Pesos',
-                'Importe_Emision_Millones',
-                'Partidas_En_Termino',
-                'Importe_En_Termino_Pesos',
-                'Importe_En_Termino_Millones',
-                'Partidas_Deuda_Admin',
-                'Importe_Deuda_Nominal_Pesos',
-                'Importe_Deuda_Nominal_Millones',
-                'Importe_Deuda_Actualizada_Pesos',
-                'Importe_Deuda_Actualizada_Millones'
-            ];
-            const lines = [headers.join(',')];
-            Object.values(mapAgg).forEach(d => {
-                lines.push([
-                    `"${d.title}"`,
-                    d.comuna,
-                    (d.morosidad_importe * 100).toFixed(2),
-                    (d.morosidad_cantidad * 100).toFixed(2),
-                    (d.cumplimiento_importe * 100).toFixed(2),
-                    (d.cumplimiento_cantidad * 100).toFixed(2),
-                    Math.round(d.emision_cant),
-                    d.emision_imp.toFixed(2),
-                    (d.emision_imp / 1e6).toFixed(2),
-                    Math.round(d.termino_cant),
-                    d.termino_imp.toFixed(2),
-                    (d.termino_imp / 1e6).toFixed(2),
-                    Math.round(d.deuda_cant),
-                    d.deuda_nom.toFixed(2),
-                    (d.deuda_nom / 1e6).toFixed(2),
-                    d.deuda_act.toFixed(2),
-                    (d.deuda_act / 1e6).toFixed(2)
-                ].join(','));
-            });
-            const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `resumen_caba_${state.geoLevel}_cuota_${state.cuota}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
         }
 
         // Carga automática de datos: lee datos.csv directamente desde el repositorio de GitHub
