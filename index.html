@@ -49,10 +49,11 @@
         }
 
         .header-inner {
-            max-width: 1440px;
+            max-width: 1720px;
+            width: 97%;
             margin: 0 auto;
             display: flex;
-             flex-wrap: wrap;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
             gap: 14px;
@@ -121,9 +122,10 @@
 
         /* Main Container */
         .main-container {
-            max-width: 1440px;
+            max-width: 1720px;
+            width: 97%;
             margin: 18px auto 36px;
-            padding: 0 18px;
+            padding: 0 16px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -330,24 +332,32 @@
 
         /* Map + Side Panel Layout */
         .workspace-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .workspace-grid.split-mode {
             display: grid;
-            grid-template-columns: 1.25fr 1fr;
+            grid-template-columns: 1.55fr 1fr;
             gap: 16px;
             align-items: start;
         }
 
-        @media (max-width: 1050px) {
-            .workspace-grid {
-                grid-template-columns: 1fr;
+        @media (max-width: 1100px) {
+            .workspace-grid.split-mode {
+                display: flex;
+                flex-direction: column;
             }
         }
 
         .panel-card {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 16px;
+            padding: 16px 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             border: 1px solid var(--border);
+            transition: all 0.2s ease;
         }
 
         .panel-header {
@@ -372,11 +382,35 @@
         }
 
         #map {
-            height: 640px;
+            height: 780px;
             width: 100%;
             border-radius: 10px;
             border: 1px solid var(--border);
             background: #E8F1F4;
+            transition: height 0.2s ease;
+        }
+
+        /* Modo Pantalla Completa para el Mapa */
+        .panel-card.map-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 3000 !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 16px 24px !important;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            background: #FFFFFF;
+        }
+
+        .panel-card.map-fullscreen #map {
+            flex: 1;
+            height: 100% !important;
+            border-radius: 8px;
         }
 
         /* Leaflet Overlays */
@@ -751,20 +785,39 @@
         </div>
 
         <!-- Mapa Interactivo + Tabla de Datos -->
-        <div class="workspace-grid">
-            <!-- Panel Izquierdo: Mapa CABA -->
-            <div class="panel-card">
+        <div class="workspace-grid" id="workspaceGrid">
+            <!-- Panel del Mapa CABA (Amplitud Total por defecto para máximo espacio) -->
+            <div class="panel-card" id="mapCard">
                 <div class="panel-header">
                     <div>
                         <h2 class="panel-title" id="mapPanelTitle">Mapa Interactivo de CABA — Por Comuna</h2>
                         <span class="panel-subtitle" id="mapPanelSubtitle">Haz clic en un polígono para fijar su detalle o hacer zoom</span>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <!-- Selector de Disposición -->
+                        <div class="segmented-control" style="background:#EBF0F2;">
+                            <button id="btnLayoutFull" class="active" onclick="setMapLayout('full')" title="Mapa en ancho total de la pantalla (máximo espacio)">🗺️ Ancho Total</button>
+                            <button id="btnLayoutSplit" onclick="setMapLayout('split')" title="Mapa y Tabla en paralelo">◫ Dividido</button>
+                        </div>
+
+                        <!-- Selector de Altura del Mapa -->
+                        <div style="display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-muted);">
+                            <span>Alto:</span>
+                            <button class="cuota-pill btn-height" data-height="650" onclick="setMapHeight(650)">650px</button>
+                            <button class="cuota-pill btn-height active" data-height="780" onclick="setMapHeight(780)">780px</button>
+                            <button class="cuota-pill btn-height" data-height="920" onclick="setMapHeight(920)">920px</button>
+                        </div>
+
                         <label style="font-size:12.5px; display:flex; align-items:center; gap:5px; cursor:pointer;">
-                            <input type="checkbox" id="chkShowLabels" checked onchange="renderMap()"> Mostrar etiquetas
+                            <input type="checkbox" id="chkShowLabels" checked onchange="renderMap()"> Etiquetas
                         </label>
+
                         <button class="btn" style="background:#EBF0F2; color:var(--primary-dark); padding:5px 10px; font-size:12px;" onclick="resetMapView()">
                             🔄 Centrar CABA
+                        </button>
+
+                        <button class="btn" id="btnFullscreenMap" style="background:#EBF0F2; color:var(--primary-dark); padding:5px 10px; font-size:12px;" onclick="toggleFullscreenMap()">
+                            ⛶ Pantalla Completa
                         </button>
                     </div>
                 </div>
@@ -1512,6 +1565,62 @@
             renderMap(true);
             renderTable();
         }
+
+        // Control de disposición y tamaño del mapa (Máximo espacio)
+        function setMapLayout(mode) {
+            const grid = document.getElementById('workspaceGrid');
+            const btnFull = document.getElementById('btnLayoutFull');
+            const btnSplit = document.getElementById('btnLayoutSplit');
+            if (mode === 'split') {
+                grid.classList.add('split-mode');
+                btnSplit.classList.add('active');
+                btnFull.classList.remove('active');
+            } else {
+                grid.classList.remove('split-mode');
+                btnFull.classList.add('active');
+                btnSplit.classList.remove('active');
+            }
+            setTimeout(() => {
+                map.invalidateSize();
+                if (geojsonLayer) map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
+            }, 180);
+        }
+
+        function setMapHeight(px) {
+            const mapEl = document.getElementById('map');
+            mapEl.style.height = px + 'px';
+            document.querySelectorAll('.btn-height').forEach(b => {
+                b.classList.toggle('active', b.dataset.height === String(px));
+            });
+            setTimeout(() => {
+                map.invalidateSize();
+                if (geojsonLayer) map.fitBounds(geojsonLayer.getBounds(), { padding: [20, 20] });
+            }, 180);
+        }
+
+        function toggleFullscreenMap() {
+            const card = document.getElementById('mapCard');
+            const btn = document.getElementById('btnFullscreenMap');
+            card.classList.toggle('map-fullscreen');
+            const isFull = card.classList.contains('map-fullscreen');
+            btn.innerHTML = isFull ? '✕ Salir Pantalla Completa' : '⛶ Pantalla Completa';
+            btn.style.background = isFull ? 'var(--accent)' : '#EBF0F2';
+            btn.style.color = isFull ? '#1B2C30' : 'var(--primary-dark)';
+            setTimeout(() => {
+                map.invalidateSize();
+                if (geojsonLayer) map.fitBounds(geojsonLayer.getBounds(), { padding: [35, 35] });
+            }, 180);
+        }
+
+        // Salir de pantalla completa con la tecla Escape
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const card = document.getElementById('mapCard');
+                if (card && card.classList.contains('map-fullscreen')) {
+                    toggleFullscreenMap();
+                }
+            }
+        });
 
         // Poblar Selectores de Cuota y Comuna dinámicamente según el archivo cargado
         function populateFilters() {
