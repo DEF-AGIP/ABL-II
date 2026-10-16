@@ -7,8 +7,6 @@
     <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- SheetJS para soportar carga directa de archivos Excel (.xlsx) además de .csv -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary-dark: #1E3A40;
@@ -579,83 +577,6 @@
             font-weight: 700;
             font-size: 11.5px;
         }
-
-        /* Modal for File Upload */
-        .modal-backdrop {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(18, 34, 38, 0.65);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        .modal-backdrop.open {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 14px;
-            max-width: 620px;
-            width: 100%;
-            padding: 24px;
-            box-shadow: 0 12px 36px rgba(0,0,0,0.25);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            color: var(--primary-dark);
-            font-size: 18px;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            color: var(--text-muted);
-        }
-
-        .dropzone {
-            border: 2px dashed var(--primary-med);
-            border-radius: 10px;
-            padding: 28px 20px;
-            text-align: center;
-            background: #F6FAFB;
-            cursor: pointer;
-            transition: all 0.15s;
-            margin: 12px 0;
-        }
-
-        .dropzone:hover, .dropzone.dragover {
-            background: #E6F4F5;
-            border-color: var(--primary);
-        }
-
-        .help-steps {
-            background: #F4F7F8;
-            border-radius: 8px;
-            padding: 12px 16px;
-            font-size: 13px;
-            line-height: 1.5;
-            color: var(--text);
-            margin-top: 12px;
-        }
-
-        .help-steps ol {
-            margin: 6px 0 0;
-            padding-left: 20px;
-        }
     </style>
 </head>
 <body>
@@ -668,11 +589,8 @@
             </div>
             <div class="header-actions">
                 <span id="dataSourceBadge" class="status-badge">📊 Datos: Base Oficial 2026 (Cuotas 1 a 11)</span>
-                <button class="btn btn-accent" onclick="openUploadModal()">
-                    📂 Actualizar Archivo (.xlsx / .csv)
-                </button>
                 <button class="btn btn-outline-light" onclick="exportCurrentTableCSV()" title="Descargar tabla filtrada actual en CSV">
-                    ⬇️ Exportar Vista
+                    ⬇️ Exportar Vista (CSV)
                 </button>
             </div>
         </div>
@@ -846,52 +764,14 @@
                                 <th onclick="sortTable('cumplimiento_cantidad')" title="Partidas en Término / Partidas Emisión">Cumpl. Cant (%) ↕</th>
                                 <th onclick="sortTable('emision_cant')">Part. Emisión ↕</th>
                                 <th onclick="sortTable('deuda_cant')">Part. Deuda ↕</th>
-                                <th onclick="sortTable('emision_imp')">Emisión ($) ↕</th>
-                                <th onclick="sortTable('deuda_nom')">Deuda Nominal ($) ↕</th>
+                                <th onclick="sortTable('emision_imp')">Emisión ($ Millones) ↕</th>
+                                <th onclick="sortTable('deuda_nom')">Deuda Nominal ($ Millones) ↕</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
                         <tfoot id="tableFoot"></tfoot>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para Actualizar Archivo -->
-    <div class="modal-backdrop" id="uploadModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📂 Actualizar Archivo de Datos (.xlsx o .csv)</h3>
-                <button class="close-btn" onclick="closeUploadModal()">&times;</button>
-            </div>
-            <p style="font-size:13.5px; color:var(--text-muted); margin:0 0 10px;">
-                Selecciona o arrastra una nueva planilla Excel (<code>.xlsx</code>) o archivo <code>.csv</code> con la estructura de columnas de emisión, pagos y deuda.
-            </p>
-            <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-                <div style="font-size:32px; margin-bottom:8px;">📄</div>
-                <div style="font-weight:700; color:var(--primary-dark); font-size:14.5px;">Haz clic aquí o arrastra tu archivo .xlsx / .csv</div>
-                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Se actualizarán automáticamente las cuotas, comunas, barrios y el mapa</div>
-                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(event)">
-            </div>
-            <div id="uploadFeedback" style="font-size:13px; font-weight:600; margin:10px 0; display:none;"></div>
-
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-                <button class="btn btn-accent" onclick="downloadUpdatedCSV()">
-                    ⬇️ Descargar datos.csv (para subir a GitHub)
-                </button>
-                <button class="btn" style="background:#EBF0F2; color:var(--text);" onclick="restoreDefaultData()">
-                    🔄 Restaurar Datos Originales
-                </button>
-            </div>
-
-            <div class="help-steps">
-                <strong>¿Cómo actualizar los datos para todos los usuarios en GitHub?</strong>
-                <ol>
-                    <li>Carga tu nuevo Excel o CSV aquí para verificar que el mapa se vea bien.</li>
-                    <li>Haz clic en <strong>"Descargar datos.csv"</strong> (o guarda tu archivo como <code>datos.csv</code>).</li>
-                    <li>En tu repositorio de GitHub, haz clic en <strong>"Add file" &rarr; "Upload files"</strong>, sube el nuevo <code>datos.csv</code> reemplazando el anterior y presiona <strong>"Commit changes"</strong>. ¡Cualquiera con el link verá los datos nuevos automáticamente!</li>
-                </ol>
             </div>
         </div>
     </div>
@@ -1018,17 +898,13 @@
 
         // Formateadores
         const fmtInt = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
-        const fmtCurr = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
         const fmtPct = (v) => (v * 100).toFixed(1).replace('.', ',') + '%';
 
-        function formatCompactARS(val) {
-            if (Math.abs(val) >= 1e9) {
-                return '$ ' + (val / 1e9).toFixed(2).replace('.', ',') + ' mil M';
-            }
-            if (Math.abs(val) >= 1e6) {
-                return '$ ' + (val / 1e6).toFixed(1).replace('.', ',') + ' M';
-            }
-            return fmtCurr.format(val);
+        // Formateador que SIEMPRE expresa el importe en millones de pesos ($ M)
+        function formatMillonesARS(val) {
+            if (val === undefined || val === null || isNaN(val)) return '$ 0,00 M';
+            const millones = val / 1000000;
+            return '$ ' + millones.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' M';
         }
 
         // Inicialización del Mapa Leaflet
@@ -1095,11 +971,11 @@
                     </div>
                     <div class="info-metric-row">
                         <span>Importe Emisión:</span>
-                        <span>${formatCompactARS(entity.emision_imp)}</span>
+                        <span>${formatMillonesARS(entity.emision_imp)}</span>
                     </div>
                     <div class="info-metric-row">
                         <span>Deuda Nominal:</span>
-                        <span>${formatCompactARS(entity.deuda_nom)}</span>
+                        <span>${formatMillonesARS(entity.deuda_nom)}</span>
                     </div>
                 `;
             };
@@ -1244,9 +1120,9 @@
 
             document.getElementById('kpi_mor_imp_pct').textContent = fmtPct(target.morosidad_importe);
             document.getElementById('kpi_mor_imp_detail').innerHTML = `
-                <b>Deuda Nominal:</b> ${formatCompactARS(target.deuda_nom)}<br>
-                <b>Emisión:</b> ${formatCompactARS(target.emision_imp)}<br>
-                <span style="color:var(--text-muted); font-size:11px;">Deuda Actualizada: ${formatCompactARS(target.deuda_act)}</span>
+                <b>Deuda Nominal:</b> ${formatMillonesARS(target.deuda_nom)}<br>
+                <b>Emisión:</b> ${formatMillonesARS(target.emision_imp)}<br>
+                <span style="color:var(--text-muted); font-size:11px;">Deuda Actualizada: ${formatMillonesARS(target.deuda_act)}</span>
             `;
 
             document.getElementById('kpi_mor_cant_pct').textContent = fmtPct(target.morosidad_cantidad);
@@ -1258,9 +1134,9 @@
 
             document.getElementById('kpi_cump_imp_pct').textContent = fmtPct(target.cumplimiento_importe);
             document.getElementById('kpi_cump_imp_detail').innerHTML = `
-                <b>Pago en Término:</b> ${formatCompactARS(target.termino_imp)}<br>
-                <b>Fuera de Término:</b> ${formatCompactARS(target.fuera_imp)}<br>
-                <span style="color:var(--text-muted); font-size:11px;">Intereses: ${formatCompactARS(target.intereses_imp)}</span>
+                <b>Pago en Término:</b> ${formatMillonesARS(target.termino_imp)}<br>
+                <b>Fuera de Término:</b> ${formatMillonesARS(target.fuera_imp)}<br>
+                <span style="color:var(--text-muted); font-size:11px;">Intereses: ${formatMillonesARS(target.intereses_imp)}</span>
             `;
 
             document.getElementById('kpi_cump_cant_pct').textContent = fmtPct(target.cumplimiento_cantidad);
@@ -1480,8 +1356,8 @@
                         <td>${fmtPct(item.cumplimiento_cantidad)}</td>
                         <td>${fmtInt.format(item.emision_cant)}</td>
                         <td>${fmtInt.format(item.deuda_cant)}</td>
-                        <td>${formatCompactARS(item.emision_imp)}</td>
-                        <td>${formatCompactARS(item.deuda_nom)}</td>
+                        <td>${formatMillonesARS(item.emision_imp)}</td>
+                        <td>${formatMillonesARS(item.deuda_nom)}</td>
                     </tr>
                 `;
             }).join('');
@@ -1496,8 +1372,8 @@
                     <td>${fmtPct(totalAgg.cumplimiento_cantidad)}</td>
                     <td>${fmtInt.format(totalAgg.emision_cant)}</td>
                     <td>${fmtInt.format(totalAgg.deuda_cant)}</td>
-                    <td>${formatCompactARS(totalAgg.emision_imp)}</td>
-                    <td>${formatCompactARS(totalAgg.deuda_nom)}</td>
+                    <td>${formatMillonesARS(totalAgg.emision_imp)}</td>
+                    <td>${formatMillonesARS(totalAgg.deuda_nom)}</td>
                 </tr>
             `;
         }
@@ -1649,19 +1525,10 @@
                 sortedComunas.map(c => `<option value="${c}">Comuna ${c}</option>`).join('');
         }
 
-        // Gestión de Carga y Actualización de Archivos (.xlsx y .csv)
-        function openUploadModal() {
-            document.getElementById('uploadModal').classList.add('open');
-        }
-
-        function closeUploadModal() {
-            document.getElementById('uploadModal').classList.remove('open');
-        }
-
         function applyNewCSVText(csvText, sourceLabel) {
             const parsed = parseCSVText(csvText);
             if (!parsed || parsed.length === 0) {
-                alert('No se pudieron leer filas válidas del archivo. Verifica que tenga las 14 columnas esperadas.');
+                console.error('No se pudieron leer filas válidas del archivo CSV.');
                 return false;
             }
             rawRows = parsed;
@@ -1676,80 +1543,6 @@
             return true;
         }
 
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            processUploadedFile(file);
-        }
-
-        function processUploadedFile(file) {
-            const feedback = document.getElementById('uploadFeedback');
-            feedback.style.display = 'block';
-            feedback.style.color = 'var(--primary)';
-            feedback.textContent = `Procesando "${file.name}"...`;
-
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (ext === 'xlsx' || ext === 'xls') {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const csvOut = XLSX.utils.sheet_to_csv(firstSheet);
-                        if (applyNewCSVText(csvOut, file.name)) {
-                            try {
-                                localStorage.setItem('caba_custom_csv', csvOut);
-                                localStorage.setItem('caba_custom_name', file.name);
-                            } catch (err) {}
-                            feedback.style.color = 'var(--success)';
-                            feedback.textContent = `✅ ¡Archivo "${file.name}" cargado con éxito! El mapa y la tabla ya están actualizados.`;
-                        }
-                    } catch (err) {
-                        feedback.style.color = 'var(--danger)';
-                        feedback.textContent = '❌ Error al leer el archivo Excel: ' + err.message;
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            } else {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const csvOut = e.target.result;
-                    if (applyNewCSVText(csvOut, file.name)) {
-                        try {
-                            localStorage.setItem('caba_custom_csv', csvOut);
-                            localStorage.setItem('caba_custom_name', file.name);
-                        } catch (err) {}
-                        feedback.style.color = 'var(--success)';
-                        feedback.textContent = `✅ ¡Archivo "${file.name}" cargado con éxito! El mapa y la tabla ya están actualizados.`;
-                    }
-                };
-                reader.readAsText(file, 'UTF-8');
-            }
-        }
-
-        function downloadUpdatedCSV() {
-            const blob = new Blob(["\uFEFF" + currentCSVText], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'datos.csv';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function restoreDefaultData() {
-            localStorage.removeItem('caba_custom_csv');
-            localStorage.removeItem('caba_custom_name');
-            applyNewCSVText(window.DEFAULT_CSV_TEXT, 'Base Oficial 2026');
-            const feedback = document.getElementById('uploadFeedback');
-            feedback.style.display = 'block';
-            feedback.style.color = 'var(--primary)';
-            feedback.textContent = '🔄 Se restauraron los datos originales.';
-        }
-
         function exportCurrentTableCSV() {
             const { mapAgg } = getAggregatedData();
             const headers = [
@@ -1760,12 +1553,16 @@
                 'Cumplimiento_Importe_Pct',
                 'Cumplimiento_Cantidad_Pct',
                 'Partidas_Emision',
-                'Importe_Emision',
+                'Importe_Emision_Pesos',
+                'Importe_Emision_Millones',
                 'Partidas_En_Termino',
-                'Importe_En_Termino',
+                'Importe_En_Termino_Pesos',
+                'Importe_En_Termino_Millones',
                 'Partidas_Deuda_Admin',
-                'Importe_Deuda_Nominal',
-                'Importe_Deuda_Actualizada'
+                'Importe_Deuda_Nominal_Pesos',
+                'Importe_Deuda_Nominal_Millones',
+                'Importe_Deuda_Actualizada_Pesos',
+                'Importe_Deuda_Actualizada_Millones'
             ];
             const lines = [headers.join(',')];
             Object.values(mapAgg).forEach(d => {
@@ -1778,11 +1575,15 @@
                     (d.cumplimiento_cantidad * 100).toFixed(2),
                     Math.round(d.emision_cant),
                     d.emision_imp.toFixed(2),
+                    (d.emision_imp / 1e6).toFixed(2),
                     Math.round(d.termino_cant),
                     d.termino_imp.toFixed(2),
+                    (d.termino_imp / 1e6).toFixed(2),
                     Math.round(d.deuda_cant),
                     d.deuda_nom.toFixed(2),
-                    d.deuda_act.toFixed(2)
+                    (d.deuda_nom / 1e6).toFixed(2),
+                    d.deuda_act.toFixed(2),
+                    (d.deuda_act / 1e6).toFixed(2)
                 ].join(','));
             });
             const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -1796,31 +1597,12 @@
             URL.revokeObjectURL(url);
         }
 
-        // Configurar Drag & Drop en el modal
+        // Carga automática de datos: lee datos.csv directamente desde el repositorio de GitHub
         window.addEventListener('DOMContentLoaded', async () => {
             initMap();
 
-            const dz = document.getElementById('dropzone');
-            dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('dragover'); });
-            dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-            dz.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dz.classList.remove('dragover');
-                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    processUploadedFile(e.dataTransfer.files[0]);
-                }
-            });
-
-            // 1. Intentar cargar datos personalizados guardados en el navegador
-            const savedCSV = localStorage.getItem('caba_custom_csv');
-            const savedName = localStorage.getItem('caba_custom_name');
-            if (savedCSV) {
-                if (applyNewCSVText(savedCSV, `${savedName || 'Archivo personalizado'} (Guardado)`)) {
-                    return;
-                }
-            }
-
-            // 2. Si está alojado en GitHub Pages (http/https), intentar leer datos.csv actualizado del repositorio
+            let loaded = false;
+            // 1. Si está alojado en GitHub Pages (http/https), lee el archivo datos.csv actualizado del repositorio
             if (window.location.protocol.startsWith('http')) {
                 try {
                     const resp = await fetch('datos.csv?t=' + Date.now(), { cache: 'no-store' });
@@ -1828,16 +1610,18 @@
                         const text = await resp.text();
                         if (text && text.includes('Cuota')) {
                             applyNewCSVText(text, 'datos.csv (GitHub)');
-                            return;
+                            loaded = true;
                         }
                     }
                 } catch (e) {
-                    // Fallback silencioso a data_bundle.js
+                    console.log('Fallback a bundle embebido:', e);
                 }
             }
 
-            // 3. Fallback offline/local inmediato con los datos embebidos
-            applyNewCSVText(window.DEFAULT_CSV_TEXT, 'Base Oficial 2026 (Cuotas 1 a 11)');
+            // 2. Si corre de forma local (file://) o si el fetch falla, usa los datos base embebidos
+            if (!loaded && window.DEFAULT_CSV_TEXT) {
+                applyNewCSVText(window.DEFAULT_CSV_TEXT, 'datos.csv (Base Oficial 2026)');
+            }
         });
     </script>
 </body>
